@@ -1,0 +1,1184 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LogThing</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        /* Custom scrollbar */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 9999px; }
+        .dark ::-webkit-scrollbar-thumb { background: #475569; }
+    </style>
+</head>
+<body class="bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 min-h-screen transition-colors duration-200">
+
+    <!-- MAIN CONTAINER -->
+    <div class="max-w-6xl mx-auto px-4 sm:px-6 py-6 sm:py-10 space-y-6">
+
+        <!-- HEADER SECTION -->
+        <header class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white dark:bg-slate-900 p-6 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-sm">
+            <div class="flex items-center space-x-4">
+                <div class="w-12 h-12 bg-amber-400 dark:bg-amber-500 rounded-2xl flex items-center justify-center shadow-md shadow-amber-400/20 text-slate-950 font-bold">
+                    <i data-lucide="check-square" class="w-6 h-6 stroke-[2.5]"></i>
+                </div>
+                <div>
+                    <h1 class="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">LogThing</h1>
+                    <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">함께 실천하는 말씀·기도·예배 기록</p>
+                </div>
+            </div>
+
+            <div class="flex items-center space-x-3 self-end sm:self-auto">
+                <!-- Current User & Role Badge / Login Button -->
+                <button onclick="openAuthModal()" id="user-role-btn" class="px-3.5 py-2 rounded-2xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors shadow-sm flex items-center space-x-2 text-xs font-bold">
+                    <i data-lucide="user-check" class="w-4 h-4 text-amber-500"></i>
+                    <span id="current-user-label">로그인</span>
+                </button>
+                <!-- Theme Toggle -->
+                <button onclick="toggleDarkMode()" class="p-2.5 rounded-2xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors shadow-sm" title="다크모드 전환">
+                    <i data-lucide="moon" class="w-5 h-5 hidden dark:block"></i>
+                    <i data-lucide="sun" class="w-5 h-5 block dark:hidden"></i>
+                </button>
+                <!-- Settings Button (Admin Only) -->
+                <button id="admin-settings-btn" onclick="openCategoryModal()" class="p-2.5 rounded-2xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors shadow-sm hidden" title="설정 (관리자 전용)">
+                    <i data-lucide="settings" class="w-5 h-5"></i>
+                </button>
+            </div>
+        </header>
+
+        <!-- DATE & VIEW SWITCHER CARD -->
+        <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-5 sm:p-6 shadow-sm grid grid-cols-1 md:grid-cols-[1fr_auto_1fr] items-center gap-4">
+            <div class="hidden md:block"></div>
+            <div class="flex justify-center">
+                <div id="daily-date-controls" class="flex items-center space-x-2">
+                    <button onclick="changeDate(-1)" class="p-2 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 transition-colors">
+                        <i data-lucide="chevron-left" class="w-5 h-5"></i>
+                    </button>
+                    <div class="w-44 sm:w-52 flex items-center justify-center">
+                        <span id="current-date-display" class="font-bold text-slate-800 dark:text-white text-base whitespace-nowrap text-center"></span>
+                    </div>
+                    <button onclick="changeDate(1)" class="p-2 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 transition-colors">
+                        <i data-lucide="chevron-right" class="w-5 h-5"></i>
+                    </button>
+                    <button onclick="goToday()" class="w-20 py-1.5 rounded-xl bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 text-xs font-bold hover:bg-amber-100 dark:hover:bg-amber-900/40 transition-colors shadow-sm whitespace-nowrap ml-1 text-center">오늘</button>
+                </div>
+                <div id="weekly-week-controls" class="hidden flex items-center space-x-2">
+                    <button onclick="changeWeek(-1)" class="p-2 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 transition-colors">
+                        <i data-lucide="chevron-left" class="w-5 h-5"></i>
+                    </button>
+                    <div class="w-44 sm:w-52 flex items-center justify-center">
+                        <span id="current-week-display" class="font-bold text-slate-800 dark:text-white text-base text-center whitespace-nowrap"></span>
+                    </div>
+                    <button onclick="changeWeek(1)" class="p-2 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 transition-colors">
+                        <i data-lucide="chevron-right" class="w-5 h-5"></i>
+                    </button>
+                    <button onclick="goThisWeek()" class="w-20 py-1.5 rounded-xl bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 text-xs font-bold hover:bg-amber-100 dark:hover:bg-amber-900/40 transition-colors shadow-sm whitespace-nowrap ml-1 text-center">이번 주</button>
+                </div>
+            </div>
+
+            <div class="flex justify-center md:justify-end">
+                <div class="bg-slate-100 dark:bg-slate-800 p-1 rounded-2xl flex space-x-1 shadow-inner whitespace-nowrap">
+                    <button onclick="switchView('daily')" id="btn-view-daily" class="px-4 py-2 rounded-xl font-bold text-xs sm:text-sm transition-all flex items-center space-x-1.5 bg-white dark:bg-slate-900 text-amber-600 dark:text-amber-400 shadow-sm whitespace-nowrap">
+                        <i data-lucide="calendar" class="w-4 h-4"></i>
+                        <span>일간</span>
+                    </button>
+                    <button onclick="switchView('weekly')" id="btn-view-weekly" class="px-4 py-2 rounded-xl font-bold text-xs sm:text-sm transition-all flex items-center space-x-1.5 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white whitespace-nowrap">
+                        <i data-lucide="layout-grid" class="w-4 h-4"></i>
+                        <span>주간</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- CATEGORY TABS & OVERALL PROGRESS -->
+        <div class="space-y-4">
+            <nav class="flex items-center space-x-2 overflow-x-auto pb-1" id="category-tabs-container">
+                <!-- Rendered via JS -->
+            </nav>
+
+            <div id="overall-progress-box" class="hidden">
+                <div class="bg-amber-400 dark:bg-amber-500 rounded-3xl p-5 sm:p-6 shadow-sm space-y-3 text-slate-950">
+                    <div class="flex items-center justify-between font-bold">
+                        <span class="text-sm">전체 달성률</span>
+                        <span id="overall-progress-text" class="text-sm">0 / 0 (0%)</span>
+                    </div>
+                    <div class="w-full bg-amber-500/40 dark:bg-amber-600/40 h-3 rounded-full overflow-hidden">
+                        <div id="overall-progress-bar" class="bg-slate-950 dark:bg-slate-950 h-full rounded-full transition-all duration-500" style="width: 0%"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- MAIN DYNAMIC CONTENT AREA -->
+        <main id="main-content-container" class="space-y-6">
+            <!-- Rendered via JS -->
+        </main>
+
+    </div>
+
+    <!-- SETTINGS MODAL (ADMIN ONLY) -->
+    <div id="category-modal" class="fixed inset-0 bg-slate-950/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl max-w-md w-full p-6 shadow-2xl space-y-5">
+            <div class="flex items-center justify-between">
+                <h3 class="text-lg font-bold text-slate-900 dark:text-white">관리자 설정</h3>
+                <button onclick="closeCategoryModal()" class="p-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 rounded-xl">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+
+            <!-- Admin Modal Tabs -->
+            <div class="flex space-x-2 border-b border-slate-100 dark:border-slate-800 pb-2">
+                <button onclick="switchAdminTab('teams')" id="tab-admin-teams" class="px-3 py-1.5 rounded-xl text-xs font-bold bg-amber-400 text-slate-950">팀 목록 관리</button>
+                <button onclick="switchAdminTab('users')" id="tab-admin-users" class="px-3 py-1.5 rounded-xl text-xs font-bold text-slate-500 hover:text-slate-800 dark:hover:text-white">구성원 계정/권한</button>
+            </div>
+
+            <!-- Tab 1: Teams -->
+            <div id="admin-panel-teams" class="space-y-4">
+                <div class="flex space-x-2">
+                    <input type="text" id="new-category-input" placeholder="추가할 팀 이름" class="flex-1 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400 dark:focus:ring-amber-500 text-slate-900 dark:text-white">
+                    <button onclick="addNewCategory()" class="px-4 py-2.5 bg-amber-400 hover:bg-amber-500 dark:bg-amber-600 text-slate-950 dark:text-white rounded-xl text-sm font-bold shadow-sm whitespace-nowrap">추가</button>
+                </div>
+                <div id="category-list-modal" class="space-y-2 max-h-60 overflow-y-auto pr-1">
+                    <!-- Populated via JS -->
+                </div>
+            </div>
+
+            <!-- Tab 2: Users & Permissions -->
+            <div id="admin-panel-users" class="space-y-4 hidden">
+                <div class="grid grid-cols-1 gap-2 bg-slate-50 dark:bg-slate-800/60 p-3 rounded-2xl border border-slate-200 dark:border-slate-700">
+                    <div class="flex space-x-2">
+                        <input type="text" id="new-user-name" placeholder="구성원 이름 (예: 홍길동)" class="w-1/2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-amber-400">
+                        <input type="text" id="new-user-id" placeholder="아이디 (ID)" class="w-1/2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-amber-400">
+                    </div>
+                    <div class="flex space-x-2">
+                        <input type="password" id="new-user-pw" placeholder="비밀번호 (PW)" class="w-1/2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-amber-400">
+                        <select id="new-user-role" class="w-1/2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-amber-400 text-slate-700 dark:text-slate-200">
+                            <option value="member">구성원 (체크만 가능)</option>
+                            <option value="admin">관리자 (모든 권한)</option>
+                        </select>
+                    </div>
+                    <button onclick="addNewUserAccount()" class="w-full py-2 bg-amber-400 hover:bg-amber-500 text-slate-950 rounded-xl text-xs font-bold shadow-sm transition-colors">구성원 계정 추가</button>
+                </div>
+                <div id="user-list-modal" class="space-y-2 max-h-48 overflow-y-auto pr-1">
+                    <!-- Populated via JS -->
+                </div>
+            </div>
+
+            <div class="flex justify-end">
+                <button onclick="closeCategoryModal()" class="px-5 py-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 text-sm font-medium hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors">완료</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- LOGIN MODAL -->
+    <div id="auth-modal" class="fixed inset-0 bg-slate-950/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl max-w-sm w-full p-6 shadow-2xl space-y-5">
+            <div class="flex items-center justify-between">
+                <h3 class="text-lg font-bold text-slate-900 dark:text-white">계정 로그인</h3>
+                <button onclick="closeAuthModal()" class="p-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 rounded-xl">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+            <div class="space-y-3">
+                <div>
+                    <label class="block text-xs font-bold text-slate-500 mb-1">아이디</label>
+                    <input type="text" id="login-id-input" onkeydown="if(event.key==='Enter') handleLogin()" placeholder="아이디 입력 (예: admin)" class="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-500 mb-1">비밀번호</label>
+                    <input type="password" id="login-pw-input" onkeydown="if(event.key==='Enter') handleLogin()" placeholder="비밀번호 입력 (기본: 1234)" class="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400">
+                </div>
+                <button type="button" onclick="handleLogin()" class="w-full py-2.5 bg-amber-400 hover:bg-amber-500 text-slate-950 rounded-xl text-sm font-bold shadow-sm transition-colors">로그인</button>
+                <button id="logout-btn" type="button" onclick="handleLogout()" class="w-full py-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 rounded-xl text-xs font-bold transition-colors hidden">로그아웃</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- TEAM MEMBER MANAGEMENT MODAL -->
+    <div id="team-member-modal" class="fixed inset-0 bg-slate-950/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl max-w-md w-full p-6 shadow-2xl space-y-5">
+            <div class="flex items-center justify-between">
+                <h3 id="team-member-modal-title" class="text-lg font-bold text-slate-900 dark:text-white">팀원 관리</h3>
+                <button onclick="closeTeamMemberModal()" class="p-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 rounded-xl">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+            <div class="space-y-4">
+                <div class="flex space-x-2">
+                    <input type="text" id="new-team-member-input" placeholder="추가할 팀원 이름" class="flex-1 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400 dark:focus:ring-amber-500 text-slate-900 dark:text-white">
+                    <button onclick="addNewTeamMember()" class="px-4 py-2.5 bg-amber-400 hover:bg-amber-500 dark:bg-amber-600 text-slate-950 dark:text-white rounded-xl text-sm font-bold shadow-sm whitespace-nowrap">추가</button>
+                </div>
+                <div id="team-member-list-modal" class="space-y-2 max-h-60 overflow-y-auto pr-1">
+                    <!-- Populated via JS -->
+                </div>
+            </div>
+            <div class="flex justify-end">
+                <button onclick="closeTeamMemberModal()" class="px-5 py-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 text-sm font-medium hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors">완료</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- TOAST NOTIFICATION -->
+    <div id="toast" class="fixed bottom-6 right-6 bg-slate-900 dark:bg-white text-white dark:text-slate-900 px-5 py-3 rounded-2xl shadow-xl text-sm font-medium transition-all duration-300 transform translate-y-20 opacity-0 z-50 flex items-center space-x-2">
+        <i data-lucide="check-circle" class="w-4 h-4 text-amber-400"></i>
+        <span id="toast-message">저장되었습니다.</span>
+    </div>
+
+    <script>
+        // Date Helpers
+        function getMonday(d) {
+            const date = new Date(d);
+            const day = date.getDay();
+            const diff = date.getDate() - day + (day === 0 ? -6 : 1);
+            date.setDate(diff);
+            date.setHours(0, 0, 0, 0);
+            return date;
+        }
+
+        function formatDateStr(d) {
+            const year = d.getFullYear();
+            const month = String(d.getMonth() + 1).padStart(2, '0');
+            const day = String(d.getDate()).padStart(2, '0');
+            return `${year}-${month}-${day}`;
+        }
+
+        function formatKoreanDate(d) {
+            const days = ['일', '월', '화', '수', '목', '금', '토'];
+            return `${d.getFullYear()}년 ${d.getMonth() + 1}월 ${d.getDate()}일 (${days[d.getDay()]})`;
+        }
+
+        function getWeekOfMonthLabel(mondayDate) {
+            const thursday = new Date(mondayDate);
+            thursday.setDate(mondayDate.getDate() + 3);
+            const month = thursday.getMonth() + 1;
+            const firstDay = new Date(thursday.getFullYear(), thursday.getMonth(), 1);
+            const weekNum = Math.ceil((thursday.getDate() + firstDay.getDay()) / 7);
+            return `${month}월 ${weekNum}주차`;
+        }
+
+        // State Management
+        let currentView = 'daily';
+        let currentDate = new Date();
+        let currentWeekStart = getMonday(new Date());
+        let selectedCategory = '전체';
+
+        let categories = ['전체', '안하은', '곽도현', '이상화'];
+        try {
+            const storedCats = JSON.parse(localStorage.getItem('logthing_categories'));
+            if (Array.isArray(storedCats) && storedCats.length > 0) categories = storedCats;
+        } catch (e) {}
+
+        let routineNames = ['말씀', '기도', '예배'];
+        try {
+            const storedRoutines = JSON.parse(localStorage.getItem('logthing_routine_names'));
+            if (Array.isArray(storedRoutines) && storedRoutines.length > 0) routineNames = storedRoutines;
+        } catch (e) {}
+
+        let teamMembers = {
+            '안하은': ['안하은', '팀원A', '팀원B'],
+            '곽도현': ['곽도현', '팀원C'],
+            '이상화': ['이상화', '팀원D']
+        };
+        try {
+            const storedMembers = JSON.parse(localStorage.getItem('logthing_team_members'));
+            if (storedMembers && typeof storedMembers === 'object') teamMembers = storedMembers;
+        } catch (e) {}
+
+        let completions = {};
+        try {
+            const storedComp = JSON.parse(localStorage.getItem('logthing_completions'));
+            if (storedComp && typeof storedComp === 'object') completions = storedComp;
+        } catch (e) {}
+
+        const defaultUsers = [
+            { id: 'admin', pw: '1234', name: '관리자', role: 'admin' },
+            { id: 'member1', pw: '1234', name: '안하은', role: 'member' },
+            { id: 'member2', pw: '1234', name: '팀원A', role: 'member' }
+        ];
+        let userAccounts = [];
+        try {
+            const storedUsers = JSON.parse(localStorage.getItem('logthing_users'));
+            userAccounts = (Array.isArray(storedUsers) && storedUsers.length > 0) ? storedUsers : [...defaultUsers];
+        } catch (e) {
+            userAccounts = [...defaultUsers];
+        }
+        if (!userAccounts.some(u => u.id === 'admin')) {
+            userAccounts.unshift(defaultUsers[0]);
+        }
+
+        let currentUser = null;
+        try {
+            const storedUser = JSON.parse(localStorage.getItem('logthing_current_user'));
+            if (storedUser && storedUser.id) {
+                currentUser = storedUser;
+            }
+        } catch (e) {
+            currentUser = null;
+        }
+
+        function isAdmin() {
+            return Boolean(currentUser && currentUser.role === 'admin');
+        }
+
+        function saveData() {
+            try {
+                localStorage.setItem('logthing_categories', JSON.stringify(categories));
+                localStorage.setItem('logthing_routine_names', JSON.stringify(routineNames));
+                localStorage.setItem('logthing_team_members', JSON.stringify(teamMembers));
+                localStorage.setItem('logthing_completions', JSON.stringify(completions));
+                localStorage.setItem('logthing_users', JSON.stringify(userAccounts));
+                if (currentUser) {
+                    localStorage.setItem('logthing_current_user', JSON.stringify(currentUser));
+                } else {
+                    localStorage.removeItem('logthing_current_user');
+                }
+            } catch (e) {}
+        }
+
+        function showToast(msg) {
+            const toast = document.getElementById('toast');
+            const toastMsg = document.getElementById('toast-message');
+            if (!toast || !toastMsg) return;
+            toastMsg.innerText = msg;
+            toast.classList.remove('translate-y-20', 'opacity-0');
+            setTimeout(() => {
+                toast.classList.add('translate-y-20', 'opacity-0');
+            }, 2200);
+        }
+
+        function toggleDarkMode() {
+            document.documentElement.classList.toggle('dark');
+            try {
+                localStorage.setItem('logthing_theme', document.documentElement.classList.contains('dark') ? 'dark' : 'light');
+            } catch (e) {}
+        }
+
+        // Auth Functions
+        function openAuthModal() {
+            const modal = document.getElementById('auth-modal');
+            const idInput = document.getElementById('login-id-input');
+            const pwInput = document.getElementById('login-pw-input');
+            const logoutBtn = document.getElementById('logout-btn');
+            if (idInput) idInput.value = '';
+            if (pwInput) pwInput.value = '';
+            if (logoutBtn) {
+                if (currentUser && currentUser.id) {
+                    logoutBtn.classList.remove('hidden');
+                } else {
+                    logoutBtn.classList.add('hidden');
+                }
+            }
+            if (modal) {
+                modal.classList.remove('hidden');
+                if (idInput) setTimeout(() => idInput.focus(), 50);
+            }
+            lucide.createIcons();
+        }
+
+        function closeAuthModal() {
+            const modal = document.getElementById('auth-modal');
+            if (modal) modal.classList.add('hidden');
+        }
+
+        function handleLogin() {
+            const idEl = document.getElementById('login-id-input');
+            const pwEl = document.getElementById('login-pw-input');
+            const idVal = idEl ? idEl.value.trim().toLowerCase() : '';
+            const pwVal = pwEl ? pwEl.value.trim() : '';
+
+            if (!idVal || !pwVal) {
+                showToast('아이디와 비밀번호를 입력해주세요.');
+                return;
+            }
+
+            if (!Array.isArray(userAccounts) || userAccounts.length === 0) {
+                userAccounts = [...defaultUsers];
+            }
+
+            const found = userAccounts.find(u => String(u.id).trim().toLowerCase() === idVal && String(u.pw).trim() === pwVal);
+            if (!found) {
+                showToast('아이디 또는 비밀번호가 일치하지 않습니다.');
+                return;
+            }
+
+            currentUser = { id: found.id, name: found.name, role: found.role };
+            saveData();
+            closeAuthModal();
+            renderApp();
+            showToast(`${found.name} (${found.role === 'admin' ? '관리자' : '구성원'})님 환영합니다!`);
+        }
+
+        function handleLogout() {
+            currentUser = null;
+            saveData();
+            closeAuthModal();
+            renderApp();
+            showToast('로그아웃되었습니다.');
+        }
+
+        // View & Date Controls
+        function switchView(view) {
+            currentView = view;
+            const btnDaily = document.getElementById('btn-view-daily');
+            const btnWeekly = document.getElementById('btn-view-weekly');
+            const dailyControls = document.getElementById('daily-date-controls');
+            const weeklyControls = document.getElementById('weekly-week-controls');
+
+            if (view === 'daily') {
+                btnDaily.className = 'px-4 py-2 rounded-xl font-bold text-xs sm:text-sm transition-all flex items-center space-x-1.5 bg-white dark:bg-slate-900 text-amber-600 dark:text-amber-400 shadow-sm whitespace-nowrap';
+                btnWeekly.className = 'px-4 py-2 rounded-xl font-bold text-xs sm:text-sm transition-all flex items-center space-x-1.5 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white whitespace-nowrap';
+                dailyControls.classList.remove('hidden');
+                weeklyControls.classList.add('hidden');
+            } else {
+                btnWeekly.className = 'px-4 py-2 rounded-xl font-bold text-xs sm:text-sm transition-all flex items-center space-x-1.5 bg-white dark:bg-slate-900 text-amber-600 dark:text-amber-400 shadow-sm whitespace-nowrap';
+                btnDaily.className = 'px-4 py-2 rounded-xl font-bold text-xs sm:text-sm transition-all flex items-center space-x-1.5 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white whitespace-nowrap';
+                dailyControls.classList.add('hidden');
+                weeklyControls.classList.remove('hidden');
+            }
+            renderApp();
+        }
+
+        function changeDate(offset) {
+            currentDate.setDate(currentDate.getDate() + offset);
+            renderApp();
+        }
+
+        function goToday() {
+            currentDate = new Date();
+            renderApp();
+        }
+
+        function changeWeek(offset) {
+            currentWeekStart.setDate(currentWeekStart.getDate() + (offset * 7));
+            renderApp();
+        }
+
+        function goThisWeek() {
+            currentWeekStart = getMonday(new Date());
+            renderApp();
+        }
+
+        function selectCategory(cat) {
+            selectedCategory = cat;
+            renderApp();
+        }
+
+        function toggleHabitCompletion(habitId, dateStr) {
+            if (!completions[habitId]) {
+                completions[habitId] = [];
+            }
+            const idx = completions[habitId].indexOf(dateStr);
+            if (idx > -1) {
+                completions[habitId].splice(idx, 1);
+            } else {
+                completions[habitId].push(dateStr);
+            }
+            saveData();
+            renderApp();
+        }
+
+        function updateRoutineName(idx, newName) {
+            if (!isAdmin()) return;
+            newName = newName.trim();
+            if (!newName || routineNames[idx] === newName) {
+                renderApp();
+                return;
+            }
+            routineNames[idx] = newName;
+            saveData();
+            renderApp();
+            showToast('루틴 항목명이 수정되었습니다.');
+        }
+
+        function updateTeamCategoryName(oldName, newName) {
+            if (!isAdmin()) return;
+            newName = newName.trim();
+            if (!newName || newName === oldName) {
+                renderApp();
+                return;
+            }
+            if (categories.includes(newName)) {
+                showToast('이미 존재하는 팀 이름입니다.');
+                renderApp();
+                return;
+            }
+            const idx = categories.indexOf(oldName);
+            if (idx > -1) categories[idx] = newName;
+            if (selectedCategory === oldName) selectedCategory = newName;
+            if (teamMembers[oldName]) {
+                teamMembers[newName] = teamMembers[oldName];
+                delete teamMembers[oldName];
+            }
+            const newCompletions = {};
+            for (const key in completions) {
+                if (key.startsWith(`h_${oldName}_`)) {
+                    newCompletions[key.replace(`h_${oldName}_`, `h_${newName}_`)] = completions[key];
+                } else {
+                    newCompletions[key] = completions[key];
+                }
+            }
+            completions = newCompletions;
+            saveData();
+            renderApp();
+            showToast('팀 이름이 수정되었습니다.');
+        }
+
+        // Main Render
+        function renderApp() {
+            const userLabel = document.getElementById('current-user-label');
+            const adminSettingsBtn = document.getElementById('admin-settings-btn');
+            if (userLabel) {
+                if (currentUser && currentUser.id) {
+                    userLabel.innerText = `${currentUser.name} (${currentUser.role === 'admin' ? '관리자' : '구성원'})`;
+                } else {
+                    userLabel.innerText = '로그인';
+                }
+            }
+            if (adminSettingsBtn) {
+                if (isAdmin()) {
+                    adminSettingsBtn.classList.remove('hidden');
+                } else {
+                    adminSettingsBtn.classList.add('hidden');
+                }
+            }
+
+            const dateDisplay = document.getElementById('current-date-display');
+            if (dateDisplay) dateDisplay.innerText = formatKoreanDate(currentDate);
+
+            const weekDisplay = document.getElementById('current-week-display');
+            if (weekDisplay) weekDisplay.innerText = getWeekOfMonthLabel(currentWeekStart);
+
+            // Render Category Tabs
+            const tabsContainer = document.getElementById('category-tabs-container');
+            if (tabsContainer) {
+                tabsContainer.innerHTML = categories.map(cat => {
+                    const active = selectedCategory === cat;
+                    return `<button onclick="selectCategory('${cat}')" class="px-5 py-2.5 rounded-2xl text-xs sm:text-sm font-bold whitespace-nowrap transition-all ${active ? 'bg-amber-400 text-slate-950 shadow-sm' : 'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800'}">${cat}</button>`;
+                }).join('');
+            }
+
+            const overallBox = document.getElementById('overall-progress-box');
+            if (overallBox) {
+                if (selectedCategory === '전체') {
+                    overallBox.classList.remove('hidden');
+                } else {
+                    overallBox.classList.add('hidden');
+                }
+            }
+
+            if (currentView === 'daily') {
+                renderDailyView();
+            } else {
+                renderWeeklyView();
+            }
+            lucide.createIcons();
+        }
+
+        function getCrownSVG() {
+            return `<svg class="w-4 h-4 text-amber-500 inline-block ml-1.5 -mt-0.5" viewBox="0 0 24 24" fill="currentColor"><path d="M5 16L3 5l5.5 5L12 4l3.5 6L21 5l-2 11H5zm14 3c0 .6-.4 1-1 1H6c-.6 0-1-.4-1-1v-1h14v1z"/></svg>`;
+        }
+
+        function renderDailyView() {
+            const container = document.getElementById('main-content-container');
+            if (!container) return;
+            const dateStr = formatDateStr(currentDate);
+            const teams = categories.filter(c => c !== '전체');
+
+            if (selectedCategory === '전체') {
+                let totalChecks = 0;
+                let completedChecks = 0;
+
+                const rowsHtml = teams.map(team => {
+                    if (!teamMembers[team]) teamMembers[team] = [team];
+                    const members = teamMembers[team];
+                    const teamTotal = members.length * routineNames.length;
+                    let teamDone = 0;
+
+                    const routineCols = routineNames.map((rName, rIdx) => {
+                        let rDone = 0;
+                        members.forEach(m => {
+                            const hId = `h_${team}_${m}_${rIdx}`;
+                            if (completions[hId] && completions[hId].includes(dateStr)) {
+                                rDone++;
+                                teamDone++;
+                            }
+                        });
+                        const rPct = members.length > 0 ? Math.round((rDone / members.length) * 100) : 0;
+                        return `<td class="py-4 px-3 text-center">
+                            <span class="inline-block px-3 py-1.5 rounded-xl text-xs font-bold ${rPct === 100 && members.length > 0 ? 'bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300' : 'bg-rose-50 dark:bg-rose-950/30 text-rose-600 dark:text-rose-400'}">${rDone}/${members.length} (${rPct}%)</span>
+                        </td>`;
+                    }).join('');
+
+                    totalChecks += teamTotal;
+                    completedChecks += teamDone;
+                    const teamPct = teamTotal > 0 ? Math.round((teamDone / teamTotal) * 100) : 0;
+
+                    return `<tr class="border-b border-slate-100 dark:border-slate-800/70 last:border-0 hover:bg-slate-50/60 dark:hover:bg-slate-800/30 transition-colors">
+                        <td class="py-4 px-4 font-bold text-sm text-slate-800 dark:text-slate-100 flex items-center space-x-2.5 whitespace-nowrap">
+                            <span class="w-2.5 h-2.5 rounded-full bg-amber-400"></span>
+                            <button onclick="selectCategory('${team}')" class="hover:text-amber-600 dark:hover:text-amber-400 transition-colors">${team}</button>
+                        </td>
+                        ${routineCols}
+                        <td class="py-4 px-4 text-center font-bold text-sm ${teamPct === 100 ? 'text-amber-500' : 'text-rose-500'}">${teamPct}%</td>
+                    </tr>`;
+                }).join('');
+
+                const overallPct = totalChecks > 0 ? Math.round((completedChecks / totalChecks) * 100) : 0;
+                const pText = document.getElementById('overall-progress-text');
+                const pBar = document.getElementById('overall-progress-bar');
+                if (pText) pText.innerText = `${completedChecks} / ${totalChecks} (${overallPct}%)`;
+                if (pBar) pBar.style.width = `${overallPct}%`;
+
+                const routineHeaders = routineNames.map((rName, rIdx) => {
+                    if (isAdmin()) {
+                        return `<th class="py-3.5 px-3 text-center text-xs font-bold text-slate-500 dark:text-slate-400">
+                            <input type="text" value="${rName}" onblur="updateRoutineName(${rIdx}, this.value)" onkeydown="if(event.key==='Enter') this.blur()" class="w-16 text-center bg-transparent border-b border-transparent hover:border-slate-300 focus:border-amber-400 focus:outline-none text-slate-600 dark:text-slate-300 font-bold">
+                        </th>`;
+                    }
+                    return `<th class="py-3.5 px-3 text-center text-xs font-bold text-slate-500 dark:text-slate-400">${rName}</th>`;
+                }).join('');
+
+                container.innerHTML = `
+                    <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-4 sm:p-6 shadow-sm overflow-x-auto">
+                        <table class="w-full text-left border-collapse">
+                            <thead>
+                                <tr class="border-b border-slate-200 dark:border-slate-800">
+                                    <th class="py-3.5 px-4 text-xs font-bold text-slate-500 dark:text-slate-400">구분</th>
+                                    ${routineHeaders}
+                                    <th class="py-3.5 px-4 text-center text-xs font-bold text-slate-500 dark:text-slate-400">달성률</th>
+                                </tr>
+                            </thead>
+                            <tbody>${rowsHtml}</tbody>
+                        </table>
+                    </div>
+                `;
+            } else {
+                if (!teamMembers[selectedCategory]) {
+                    teamMembers[selectedCategory] = [selectedCategory];
+                }
+                const members = teamMembers[selectedCategory];
+
+                const memberRows = members.map(member => {
+                    let memberDone = 0;
+                    const checkCells = routineNames.map((rName, rIdx) => {
+                        const habitId = `h_${selectedCategory}_${member}_${rIdx}`;
+                        const isDone = completions[habitId] && completions[habitId].includes(dateStr);
+                        if (isDone) memberDone++;
+                        return `<td class="py-4 px-2 text-center">
+                            <button onclick="toggleHabitCompletion('${habitId}', '${dateStr}')" class="w-11 h-11 rounded-2xl inline-flex items-center justify-center transition-all ${isDone ? 'bg-amber-400 text-slate-950 shadow-sm scale-105' : 'bg-slate-100 dark:bg-slate-800 text-slate-300 dark:text-slate-600 hover:bg-slate-200 dark:hover:bg-slate-700'}">
+                                ${isDone ? '<i data-lucide="check" class="w-5 h-5 stroke-[3]"></i>' : '<span class="w-2.5 h-0.5 bg-slate-300 dark:bg-slate-600 rounded-full"></span>'}
+                            </button>
+                        </td>`;
+                    }).join('');
+
+                    const memberPct = routineNames.length > 0 ? Math.round((memberDone / routineNames.length) * 100) : 0;
+                    const isAllDone = memberPct === 100 && routineNames.length > 0;
+
+                    return `<tr class="border-b border-slate-100 dark:border-slate-800/70 last:border-0 hover:bg-slate-50/60 dark:hover:bg-slate-800/30 transition-colors">
+                        <td class="py-4 px-3 font-bold text-sm text-slate-800 dark:text-slate-100 whitespace-nowrap">
+                            <div class="flex items-center space-x-2">
+                                <span class="w-2.5 h-2.5 rounded-full bg-amber-400 shrink-0"></span>
+                                <span>${member}</span>
+                                ${isAllDone ? getCrownSVG() : ''}
+                            </div>
+                        </td>
+                        ${checkCells}
+                        <td class="py-4 px-3 text-center font-bold text-sm ${isAllDone ? 'text-amber-500' : 'text-rose-500'}">${memberPct}%</td>
+                    </tr>`;
+                }).join('');
+
+                const routineHeaders = routineNames.map((rName, rIdx) => {
+                    if (isAdmin()) {
+                        return `<th class="py-3.5 px-2 text-center text-xs font-bold text-slate-500 dark:text-slate-400">
+                            <input type="text" value="${rName}" onblur="updateRoutineName(${rIdx}, this.value)" onkeydown="if(event.key==='Enter') this.blur()" class="w-16 text-center bg-transparent border-b border-transparent hover:border-slate-300 focus:border-amber-400 focus:outline-none text-slate-600 dark:text-slate-300 font-bold">
+                        </th>`;
+                    }
+                    return `<th class="py-3.5 px-2 text-center text-xs font-bold text-slate-500 dark:text-slate-400">${rName}</th>`;
+                }).join('');
+
+                const teamTitleHtml = isAdmin()
+                    ? `<input type="text" value="${selectedCategory}" onblur="updateTeamCategoryName('${selectedCategory}', this.value)" onkeydown="if(event.key==='Enter') this.blur()" class="text-xl font-bold text-slate-900 dark:text-white bg-transparent border-b border-transparent hover:border-slate-300 focus:border-amber-400 focus:outline-none w-36">`
+                    : `<h2 class="text-xl font-bold text-slate-900 dark:text-white">${selectedCategory}</h2>`;
+
+                const manageBtnHtml = isAdmin()
+                    ? `<button onclick="openTeamMemberManager('${selectedCategory}')" class="px-4 py-2 rounded-2xl bg-amber-400 hover:bg-amber-500 text-slate-950 text-xs font-bold shadow-sm transition-colors">팀원 관리</button>`
+                    : '';
+
+                container.innerHTML = `
+                    <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-5 sm:p-6 shadow-sm space-y-4">
+                        <div class="flex items-center justify-between">
+                            ${teamTitleHtml}
+                            ${manageBtnHtml}
+                        </div>
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left border-collapse">
+                                <thead>
+                                    <tr class="border-b border-slate-200 dark:border-slate-800">
+                                        <th class="py-3.5 px-3 text-xs font-bold text-slate-500 dark:text-slate-400 w-32">팀원</th>
+                                        ${routineHeaders}
+                                        <th class="py-3.5 px-3 text-center text-xs font-bold text-slate-500 dark:text-slate-400">개인 달성률</th>
+                                    </tr>
+                                </thead>
+                                <tbody>${memberRows}</tbody>
+                            </table>
+                        </div>
+                    </div>
+                `;
+            }
+        }
+
+        function renderWeeklyView() {
+            const container = document.getElementById('main-content-container');
+            if (!container) return;
+
+            const weekDates = [];
+            const dayLabels = ['월', '화', '수', '목', '금', '토', '일'];
+            for (let i = 0; i < 7; i++) {
+                const d = new Date(currentWeekStart);
+                d.setDate(currentWeekStart.getDate() + i);
+                weekDates.push({
+                    dateStr: formatDateStr(d),
+                    label: `${d.getMonth() + 1}/${d.getDate()}(${dayLabels[i]})`
+                });
+            }
+
+            const teams = categories.filter(c => c !== '전체');
+
+            if (selectedCategory === '전체') {
+                let totalWeekChecks = 0;
+                let completedWeekChecks = 0;
+
+                const rowsHtml = teams.map(team => {
+                    const members = teamMembers[team] || [team];
+                    const teamWeekTotal = members.length * routineNames.length * 7;
+                    let teamWeekDone = 0;
+
+                    const dayCols = weekDates.map(wd => {
+                        let dayDone = 0;
+                        const dayTotal = members.length * routineNames.length;
+                        members.forEach(m => {
+                            routineNames.forEach((_, rIdx) => {
+                                const hId = `h_${team}_${m}_${rIdx}`;
+                                if (completions[hId] && completions[hId].includes(wd.dateStr)) {
+                                    dayDone++;
+                                    teamWeekDone++;
+                                }
+                            });
+                        });
+                        const pct = dayTotal > 0 ? Math.round((dayDone / dayTotal) * 100) : 0;
+                        return `<td class="py-3.5 px-2 text-center">
+                            <span class="inline-block px-2.5 py-1 rounded-xl text-xs font-bold ${pct === 100 && dayTotal > 0 ? 'bg-amber-400 text-slate-950' : pct > 0 ? 'bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300' : 'bg-slate-100 dark:bg-slate-800 text-slate-400'}">${pct}%</span>
+                        </td>`;
+                    }).join('');
+
+                    totalWeekChecks += teamWeekTotal;
+                    completedWeekChecks += teamWeekDone;
+                    const teamWeekPct = teamWeekTotal > 0 ? Math.round((teamWeekDone / teamWeekTotal) * 100) : 0;
+
+                    return `<tr class="border-b border-slate-100 dark:border-slate-800/70 last:border-0">
+                        <td class="py-4 px-4 font-bold text-sm text-slate-800 dark:text-slate-100 whitespace-nowrap">
+                            <button onclick="selectCategory('${team}')" class="hover:text-amber-500">${team}</button>
+                        </td>
+                        ${dayCols}
+                        <td class="py-4 px-4 text-center font-bold text-sm ${teamWeekPct === 100 ? 'text-amber-500' : 'text-rose-500'}">${teamWeekPct}%</td>
+                    </tr>`;
+                }).join('');
+
+                const overallPct = totalWeekChecks > 0 ? Math.round((completedWeekChecks / totalWeekChecks) * 100) : 0;
+                const pText = document.getElementById('overall-progress-text');
+                const pBar = document.getElementById('overall-progress-bar');
+                if (pText) pText.innerText = `${completedWeekChecks} / ${totalWeekChecks} (${overallPct}%)`;
+                if (pBar) pBar.style.width = `${overallPct}%`;
+
+                container.innerHTML = `
+                    <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-4 sm:p-6 shadow-sm overflow-x-auto">
+                        <table class="w-full text-left border-collapse">
+                            <thead>
+                                <tr class="border-b border-slate-200 dark:border-slate-800">
+                                    <th class="py-3.5 px-4 text-xs font-bold text-slate-500 dark:text-slate-400">팀</th>
+                                    ${weekDates.map(wd => `<th class="py-3.5 px-2 text-center text-xs font-bold text-slate-500 dark:text-slate-400 whitespace-nowrap">${wd.label}</th>`).join('')}
+                                    <th class="py-3.5 px-4 text-center text-xs font-bold text-slate-500 dark:text-slate-400">주간 달성률</th>
+                                </tr>
+                            </thead>
+                            <tbody>${rowsHtml}</tbody>
+                        </table>
+                    </div>
+                `;
+            } else {
+                const members = teamMembers[selectedCategory] || [selectedCategory];
+                const manageBtnHtml = isAdmin()
+                    ? `<button onclick="openTeamMemberManager('${selectedCategory}')" class="px-4 py-2 rounded-2xl bg-amber-400 hover:bg-amber-500 text-slate-950 text-xs font-bold shadow-sm transition-colors">팀원 관리</button>`
+                    : '';
+
+                const memberCards = members.map(member => {
+                    let memberWeekDone = 0;
+                    const memberWeekTotal = routineNames.length * 7;
+
+                    const routineRows = routineNames.map((rName, rIdx) => {
+                        const habitId = `h_${selectedCategory}_${member}_${rIdx}`;
+                        const dayBtns = weekDates.map(wd => {
+                            const isDone = completions[habitId] && completions[habitId].includes(wd.dateStr);
+                            if (isDone) memberWeekDone++;
+                            return `<td class="py-2.5 px-1.5 text-center">
+                                <button onclick="toggleHabitCompletion('${habitId}', '${wd.dateStr}')" class="w-9 h-9 rounded-xl inline-flex items-center justify-center transition-all ${isDone ? 'bg-amber-400 text-slate-950 shadow-sm' : 'bg-slate-100 dark:bg-slate-800 text-slate-300 dark:text-slate-600 hover:bg-slate-200 dark:hover:bg-slate-700'}">
+                                    ${isDone ? '<i data-lucide="check" class="w-4 h-4 stroke-[3]"></i>' : '-'}
+                                </button>
+                            </td>`;
+                        }).join('');
+
+                        return `<tr class="border-b border-slate-100 dark:border-slate-800/50 last:border-0">
+                            <td class="py-2.5 px-3 text-xs font-bold text-slate-600 dark:text-slate-300 whitespace-nowrap">${rName}</td>
+                            ${dayBtns}
+                        </tr>`;
+                    }).join('');
+
+                    const pct = memberWeekTotal > 0 ? Math.round((memberWeekDone / memberWeekTotal) * 100) : 0;
+
+                    return `<div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-5 shadow-sm space-y-3 overflow-x-auto">
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center space-x-2">
+                                <span class="w-2.5 h-2.5 rounded-full bg-amber-400"></span>
+                                <span class="font-bold text-base text-slate-900 dark:text-white">${member}</span>
+                            </div>
+                            <span class="text-xs font-bold px-3 py-1 rounded-full ${pct === 100 ? 'bg-amber-400 text-slate-950' : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300'}">${pct}%</span>
+                        </div>
+                        <table class="w-full text-left border-collapse">
+                            <thead>
+                                <tr class="border-b border-slate-100 dark:border-slate-800">
+                                    <th class="py-2 px-3 text-xs font-bold text-slate-400">항목</th>
+                                    ${weekDates.map(wd => `<th class="py-2 px-1.5 text-center text-xs font-bold text-slate-400 whitespace-nowrap">${wd.label}</th>`).join('')}
+                                </tr>
+                            </thead>
+                            <tbody>${routineRows}</tbody>
+                        </table>
+                    </div>`;
+                }).join('');
+
+                container.innerHTML = `
+                    <div class="flex items-center justify-between px-1">
+                        <h2 class="text-xl font-bold text-slate-900 dark:text-white">${selectedCategory} 주간 현황</h2>
+                        ${manageBtnHtml}
+                    </div>
+                    <div class="space-y-4">${memberCards}</div>
+                `;
+            }
+        }
+
+        // Admin Settings Modal Functions
+        function openCategoryModal() {
+            if (!isAdmin()) {
+                showToast('관리자 권한이 필요합니다.');
+                return;
+            }
+            const modal = document.getElementById('category-modal');
+            if (modal) modal.classList.remove('hidden');
+            switchAdminTab('teams');
+            renderCategoryListModal();
+            renderUserListModal();
+            lucide.createIcons();
+        }
+
+        function closeCategoryModal() {
+            const modal = document.getElementById('category-modal');
+            if (modal) modal.classList.add('hidden');
+            renderApp();
+        }
+
+        function switchAdminTab(tab) {
+            const tabTeams = document.getElementById('tab-admin-teams');
+            const tabUsers = document.getElementById('tab-admin-users');
+            const panelTeams = document.getElementById('admin-panel-teams');
+            const panelUsers = document.getElementById('admin-panel-users');
+
+            if (tab === 'teams') {
+                tabTeams.className = 'px-3 py-1.5 rounded-xl text-xs font-bold bg-amber-400 text-slate-950';
+                tabUsers.className = 'px-3 py-1.5 rounded-xl text-xs font-bold text-slate-500 hover:text-slate-800 dark:hover:text-white';
+                panelTeams.classList.remove('hidden');
+                panelUsers.classList.add('hidden');
+            } else {
+                tabUsers.className = 'px-3 py-1.5 rounded-xl text-xs font-bold bg-amber-400 text-slate-950';
+                tabTeams.className = 'px-3 py-1.5 rounded-xl text-xs font-bold text-slate-500 hover:text-slate-800 dark:hover:text-white';
+                panelUsers.classList.remove('hidden');
+                panelTeams.classList.add('hidden');
+                renderUserListModal();
+            }
+        }
+
+        let draggedCatIdx = null;
+        function renderCategoryListModal() {
+            const listEl = document.getElementById('category-list-modal');
+            if (!listEl) return;
+            const teams = categories.filter(c => c !== '전체');
+            listEl.innerHTML = teams.map((team, idx) => `
+                <div draggable="true"
+                     ondragstart="draggedCatIdx=${idx}"
+                     ondragover="event.preventDefault()"
+                     ondrop="dropCategory(${idx})"
+                     class="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 cursor-move">
+                    <div class="flex items-center space-x-2 flex-1">
+                        <i data-lucide="grip-vertical" class="w-4 h-4 text-slate-400"></i>
+                        <input type="text" value="${team}" onblur="updateTeamCategoryName('${team}', this.value); renderCategoryListModal();" onkeydown="if(event.key==='Enter') this.blur()" class="bg-transparent font-bold text-sm text-slate-800 dark:text-slate-100 focus:outline-none w-full">
+                    </div>
+                    <button onclick="deleteCategory('${team}')" class="p-1.5 text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/40 rounded-xl transition-colors">
+                        <i data-lucide="trash-2" class="w-4 h-4"></i>
+                    </button>
+                </div>
+            `).join('');
+            lucide.createIcons();
+        }
+
+        function dropCategory(targetIdx) {
+            if (draggedCatIdx === null || draggedCatIdx === targetIdx) return;
+            const teams = categories.filter(c => c !== '전체');
+            const [moved] = teams.splice(draggedCatIdx, 1);
+            teams.splice(targetIdx, 0, moved);
+            categories = ['전체', ...teams];
+            draggedCatIdx = null;
+            saveData();
+            renderCategoryListModal();
+            renderApp();
+        }
+
+        function addNewCategory() {
+            const input = document.getElementById('new-category-input');
+            if (!input) return;
+            const name = input.value.trim();
+            if (!name) return;
+            if (categories.includes(name)) {
+                showToast('이미 존재하는 팀 이름입니다.');
+                return;
+            }
+            categories.push(name);
+            teamMembers[name] = [name];
+            input.value = '';
+            saveData();
+            renderCategoryListModal();
+            renderApp();
+            showToast('새 팀이 추가되었습니다.');
+        }
+
+        function deleteCategory(name) {
+            categories = categories.filter(c => c !== name);
+            delete teamMembers[name];
+            if (selectedCategory === name) selectedCategory = '전체';
+            saveData();
+            renderCategoryListModal();
+            renderApp();
+            showToast('팀이 삭제되었습니다.');
+        }
+
+        // User Accounts Management (Admin Only)
+        function renderUserListModal() {
+            const listEl = document.getElementById('user-list-modal');
+            if (!listEl) return;
+            listEl.innerHTML = userAccounts.map((u, idx) => `
+                <div class="p-3 bg-slate-50 dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 space-y-2.5">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <div class="text-sm font-bold text-slate-800 dark:text-slate-100">${u.name} <span class="text-xs font-normal text-slate-400">(@${u.id})</span></div>
+                            <div class="text-xs font-bold ${u.role === 'admin' ? 'text-amber-500' : 'text-slate-500'}">${u.role === 'admin' ? '관리자 (모든 권한)' : '구성원 (체크만 가능)'}</div>
+                        </div>
+                        <div class="flex items-center space-x-1">
+                            ${u.id !== 'admin' ? `
+                                <button onclick="toggleUserRole(${idx})" class="px-2.5 py-1 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-xs font-bold text-slate-600 dark:text-slate-300 hover:border-amber-400">권한 변경</button>
+                                <button onclick="deleteUserAccount(${idx})" class="p-1.5 text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/40 rounded-xl">
+                                    <i data-lucide="trash-2" class="w-4 h-4"></i>
+                                </button>
+                            ` : '<span class="text-xs text-slate-400 px-2">기본 관리자</span>'}
+                        </div>
+                    </div>
+                    <div class="flex items-center space-x-2 pt-2 border-t border-slate-200/70 dark:border-slate-700/70">
+                        <input type="text" id="edit-user-name-${idx}" value="${u.name}" placeholder="이름" class="w-1/3 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-2.5 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-amber-400 text-slate-800 dark:text-slate-100">
+                        <input type="text" id="edit-user-pw-${idx}" value="${u.pw}" placeholder="비밀번호" class="w-1/3 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-2.5 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-amber-400 text-slate-800 dark:text-slate-100">
+                        <button onclick="updateUserAccountInfo(${idx})" class="w-1/3 py-1.5 bg-amber-400 hover:bg-amber-500 text-slate-950 rounded-xl text-xs font-bold shadow-sm transition-colors">정보 변경</button>
+                    </div>
+                </div>
+            `).join('');
+            lucide.createIcons();
+        }
+
+        function updateUserAccountInfo(idx) {
+            if (!isAdmin()) return;
+            const nameInput = document.getElementById(`edit-user-name-${idx}`);
+            const pwInput = document.getElementById(`edit-user-pw-${idx}`);
+            if (!nameInput || !pwInput) return;
+
+            const newName = nameInput.value.trim();
+            const newPw = pwInput.value.trim();
+
+            if (!newName || !newPw) {
+                showToast('이름과 비밀번호를 모두 입력해주세요.');
+                return;
+            }
+
+            const targetUser = userAccounts[idx];
+            if (!targetUser) return;
+
+            targetUser.name = newName;
+            targetUser.pw = newPw;
+
+            if (currentUser && currentUser.id === targetUser.id) {
+                currentUser.name = newName;
+            }
+
+            saveData();
+            renderUserListModal();
+            renderApp();
+            showToast('계정 이름 및 비밀번호가 변경되었습니다.');
+        }
+
+        function addNewUserAccount() {
+            const nameEl = document.getElementById('new-user-name');
+            const idEl = document.getElementById('new-user-id');
+            const pwEl = document.getElementById('new-user-pw');
+            const roleEl = document.getElementById('new-user-role');
+
+            const name = nameEl.value.trim();
+            const id = idEl.value.trim();
+            const pw = pwEl.value.trim();
+            const role = roleEl.value;
+
+            if (!name || !id || !pw) {
+                showToast('이름, 아이디, 비밀번호를 모두 입력해주세요.');
+                return;
+            }
+            if (userAccounts.some(u => u.id.toLowerCase() === id.toLowerCase())) {
+                showToast('이미 사용 중인 아이디입니다.');
+                return;
+            }
+
+            userAccounts.push({ id, pw, name, role });
+            nameEl.value = '';
+            idEl.value = '';
+            pwEl.value = '';
+            saveData();
+            renderUserListModal();
+            showToast('구성원 계정이 추가되었습니다.');
+        }
+
+        function toggleUserRole(idx) {
+            userAccounts[idx].role = userAccounts[idx].role === 'admin' ? 'member' : 'admin';
+            saveData();
+            renderUserListModal();
+            showToast('권한이 변경되었습니다.');
+        }
+
+        function deleteUserAccount(idx) {
+            userAccounts.splice(idx, 1);
+            saveData();
+            renderUserListModal();
+            showToast('계정이 삭제되었습니다.');
+        }
+
+        // Team Member Management Modal
+        let currentManagingTeam = '';
+        let draggedMemberIdx = null;
+
+        function openTeamMemberManager(teamName) {
+            if (!isAdmin()) {
+                showToast('관리자 권한이 필요합니다.');
+                return;
+            }
+            currentManagingTeam = teamName;
+            const modal = document.getElementById('team-member-modal');
+            const title = document.getElementById('team-member-modal-title');
+            if (title) title.innerText = `${teamName} 팀원 관리`;
+            if (modal) modal.classList.remove('hidden');
+            renderTeamMemberListModal();
+        }
+
+        function closeTeamMemberModal() {
+            const modal = document.getElementById('team-member-modal');
+            if (modal) modal.classList.add('hidden');
+            renderApp();
+        }
+
+        function renderTeamMemberListModal() {
+            const listEl = document.getElementById('team-member-list-modal');
+            if (!listEl || !currentManagingTeam) return;
+            const members = teamMembers[currentManagingTeam] || [];
+            listEl.innerHTML = members.map((member, idx) => `
+                <div draggable="true"
+                     ondragstart="draggedMemberIdx=${idx}"
+                     ondragover="event.preventDefault()"
+                     ondrop="dropTeamMember(${idx})"
+                     class="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 cursor-move">
+                    <div class="flex items-center space-x-2">
+                        <i data-lucide="grip-vertical" class="w-4 h-4 text-slate-400"></i>
+                        <span class="font-bold text-sm text-slate-800 dark:text-slate-100">${member}</span>
+                    </div>
+                    <button onclick="removeTeamMember(${idx})" class="p-1.5 text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/40 rounded-xl transition-colors">
+                        <i data-lucide="trash-2" class="w-4 h-4"></i>
+                    </button>
+                </div>
+            `).join('');
+            lucide.createIcons();
+        }
+
+        function dropTeamMember(targetIdx) {
+            if (draggedMemberIdx === null || draggedMemberIdx === targetIdx) return;
+            const members = teamMembers[currentManagingTeam];
+            const [moved] = members.splice(draggedMemberIdx, 1);
+            members.splice(targetIdx, 0, moved);
+            draggedMemberIdx = null;
+            saveData();
+            renderTeamMemberListModal();
+            renderApp();
+        }
+
+        function addNewTeamMember() {
+            const input = document.getElementById('new-team-member-input');
+            if (!input || !currentManagingTeam) return;
+            const name = input.value.trim();
+            if (!name) return;
+            if (!teamMembers[currentManagingTeam]) teamMembers[currentManagingTeam] = [];
+            if (teamMembers[currentManagingTeam].includes(name)) {
+                showToast('이미 등록된 팀원입니다.');
+                return;
+            }
+            teamMembers[currentManagingTeam].push(name);
+            input.value = '';
+            saveData();
+            renderTeamMemberListModal();
+            renderApp();
+            showToast('팀원이 추가되었습니다.');
+        }
+
+        function removeTeamMember(idx) {
+            if (!currentManagingTeam || !teamMembers[currentManagingTeam]) return;
+            teamMembers[currentManagingTeam].splice(idx, 1);
+            saveData();
+            renderTeamMemberListModal();
+            renderApp();
+            showToast('팀원이 삭제되었습니다.');
+        }
+
+        // Initialize App
+        window.addEventListener('DOMContentLoaded', () => {
+            try {
+                if (localStorage.getItem('logthing_theme') === 'dark') {
+                    document.documentElement.classList.add('dark');
+                }
+            } catch (e) {}
+            renderApp();
+        });
+    </script>
+</body>
+</html>
